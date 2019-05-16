@@ -7,13 +7,11 @@ from flexproto import flexclient
 from kivy.uix.textinput import TextInput
 
 
-def callback(instance):
-    print("The button <%s> is being pressed" % instance.text)
 
 
 class MainWin(App):
     def build(self):
-        master_panel = TabbedPanel(do_default_tab=False)
+        self.master_panel = TabbedPanel(do_default_tab=False)
 
         # set up the new connections tab
         connect_tab = TabbedPanelHeader(text="Connect")
@@ -28,7 +26,7 @@ class MainWin(App):
 
             for name in self.flex.roster:
                 button = Button(text="Send Msg to " + str(name[b'aliases'][0]))
-                button.bind(on_press=callback)
+                button.bind(on_press=self.roster_click_callback)
                 self.rosterLayout.add_widget(button)
             
 
@@ -36,7 +34,7 @@ class MainWin(App):
         connectLayout.add_widget(serverTextbox)
 
         connect_tab.content = connectLayout
-        master_panel.add_widget(connect_tab)
+        self.master_panel.add_widget(connect_tab)
 
         # roster tab setup
         tab_header = TabbedPanelHeader(text="Roster")
@@ -44,15 +42,31 @@ class MainWin(App):
         self.rosterLayout = BoxLayout(padding=10, orientation="vertical")
         title_label = Label(text=u"Hello world", font_size="20sp")
         self.rosterLayout.add_widget(title_label)
-        # for b in range(10):
-        #     button = Button(text="Button " + str(b))
-        #     button.bind(on_press=callback)
-        #     rosterLayout.add_widget(button)
         tab_header.content = self.rosterLayout
-        master_panel.add_widget(tab_header)
+        self.master_panel.add_widget(tab_header)
 
-        return master_panel
+        return self.master_panel
 
 
+    def roster_click_callback(self, instance):
+        self.newChatTab(instance.text)
+
+    def newChatTab(self, target):
+                # set up the new connections tab
+            chat_tab = TabbedPanelHeader(text=target)
+            chatLayout = BoxLayout(padding=10, orientation="horizontal")
+            chat_label = Label(text=u"Connect to server:", font_size="20sp")
+            chatLayout.add_widget(chat_label)
+            chatTextbox = TextInput(text="")
+            chatTextbox.multiline = False
+
+            def on_enter(instance): # callback for return key in the hostname box.
+                self.flex.send_message(message="hello?")
+
+            chatTextbox.bind(on_text_validate=on_enter)
+            chatLayout.add_widget(chatTextbox)
+
+            chat_tab.content = chatLayout
+            self.master_panel.add_widget(chat_tab)
 
 MainWin().run()

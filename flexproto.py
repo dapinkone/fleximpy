@@ -45,7 +45,7 @@ class flexclient:
         self.send_datum({b"challenge": challenge}, Datum.AuthResponse)
 
     def send_message(
-        self, to, category="test", flags=["FLAGS?"], date=dt.now(), msgstr=""
+        self, to, category="test", flags=["FLAGS?"], date=dt.now(), message=""
     ):
         msg = {
             b"to": to,
