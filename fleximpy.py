@@ -15,17 +15,22 @@ class MainWin(App):
     def build(self):
         master_panel = TabbedPanel(do_default_tab=False)
 
+        # set up the new connections tab
         connect_tab = TabbedPanelHeader(text="Connect")
         connectLayout = BoxLayout(padding=10, orientation="horizontal")
-
         connect_label = Label(text=u"Connect to server:", font_size="20sp")
         connectLayout.add_widget(connect_label)
-
         serverTextbox = TextInput(text="")
         serverTextbox.multiline = False
 
-        def on_enter(instance):
+        def on_enter(instance): # callback for return key in the hostname box.
             self.flex = flexclient(ip=instance.text)
+
+            for name in self.flex.roster:
+                button = Button(text="Send Msg to " + str(name[b'aliases'][0]))
+                button.bind(on_press=callback)
+                self.rosterLayout.add_widget(button)
+            
 
         serverTextbox.bind(on_text_validate=on_enter)
         connectLayout.add_widget(serverTextbox)
@@ -33,23 +38,21 @@ class MainWin(App):
         connect_tab.content = connectLayout
         master_panel.add_widget(connect_tab)
 
+        # roster tab setup
         tab_header = TabbedPanelHeader(text="Roster")
 
-        rosterLayout = BoxLayout(padding=10, orientation="vertical")
+        self.rosterLayout = BoxLayout(padding=10, orientation="vertical")
         title_label = Label(text=u"Hello world", font_size="20sp")
-        rosterLayout.add_widget(title_label)
-        for b in range(10):
-            button = Button(text="Button " + str(b))
-            button.bind(on_press=callback)
-            rosterLayout.add_widget(button)
-        tab_header.content = rosterLayout
+        self.rosterLayout.add_widget(title_label)
+        # for b in range(10):
+        #     button = Button(text="Button " + str(b))
+        #     button.bind(on_press=callback)
+        #     rosterLayout.add_widget(button)
+        tab_header.content = self.rosterLayout
         master_panel.add_widget(tab_header)
 
         return master_panel
 
-
-class jklClient:
-    roster = list()
 
 
 MainWin().run()

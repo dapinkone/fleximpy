@@ -27,6 +27,9 @@ class flexclient:
         print(challenge_d)
         self.send_auth_response(challenge_d[b"challenge"])
         self.request_roster()
+        _, _ = self.read_datum() # user datum
+        _, self.roster = self.read_datum() # roster
+        #print(d_type, d_data)
 
     def mainloop(self):
         while True:
