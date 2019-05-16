@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+cython = "*"
+kivy = "*"
+pygame = "*"
+pillow = "*"
+black = "==18.9b0"
+pynacl = "*"
+msgpack = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"
