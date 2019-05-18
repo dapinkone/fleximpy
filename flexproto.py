@@ -22,14 +22,17 @@ class Datum(Enum):
 class flexclient:
     def __init__(
         self,
-        ip: str = "10.20.30.14",
+        ip: str = "127.0.0.1",
         port: int = 4321,
         username: str = "test" + str(dt.now()),
     ) -> None:
-        self.pub_key = hexlify(bytes(username, encoding="utf-8"))
+        self.username = username
+        self.pub_key = hexlify(
+            bytes("i need a public key" + str(dt.now()), encoding="utf-8")
+        )
         self.sock = create_connection((ip, port))
         self.sock.send(msgpack.packb("FLEX"))  # initial protocol header
-        cmd = {"cmd": "AUTH", "payload": [self.pub_key]}
+        cmd = {"cmd": "AUTH", "payload": [self.pub_key, self.username]}
         self.send_datum(cmd, Datum.Command)
 
         _, challenge_d = self.read_datum()
@@ -37,7 +40,7 @@ class flexclient:
         self.send_auth_response(challenge_d["challenge"])
         self.request_roster()
         _, _ = self.read_datum()  # user datum?
-
+        _, self.roster = self.read_datum()  # roster
         Thread(target=self.mainloop).start()
 
     def mainloop(self):
@@ -50,6 +53,7 @@ class flexclient:
             print(d_type, d_data)
             if d_type == Datum.Roster:
                 self.roster = d_data
+                self.got_roster_callback()
             if d_type == Datum.Message:
                 self.got_message_callback(d_data)
 
@@ -69,11 +73,11 @@ class flexclient:
         flags: Optional[List[str]] = ["FLAGS?"],
         message: str = "",
     ):
-        to = hexlify(bytes(to, encoding="utf-8"))
+        to = hexlify(to)
 
         msg = {
             "to": to,
-            "from": self.username,
+            "from": self.pub_key,
             "flags": flags,
             "date": int(dt.now().timestamp()),
             "msg": message,
