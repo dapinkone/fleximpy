@@ -12,11 +12,13 @@ import kivy
 from time import sleep
 import logging
 from kivy.logger import Logger
+
 # logger = kivy.logger.logging
 # logger.level = logging.DEBUG
 from kivy.config import Config
-Config.set('kivy', 'log_level', 'debug')
-Config.set('kivy', 'log_enable', 0)
+
+Config.set("kivy", "log_level", "debug")
+Config.set("kivy", "log_enable", 0)
 Config.write()
 debug = Logger.debug
 
@@ -44,7 +46,7 @@ class MainWin(App):
 
             self.master_panel.switch_to(self.rosterTab)
             self.load_roster_tab()
-            
+
             # self.flex.got_roster_callback = self.build_roster
 
         serverTextbox.bind(on_text_validate=on_enter)
@@ -72,14 +74,14 @@ class MainWin(App):
         self.rosterTabLayout.clear_widgets()
         debug("Clearing Widgets")
         for pub_key in self.flex.roster.keys():
-              # str(unhexlify(name['key']), encoding="utf-8")
-            alias = self.flex.roster.get(pub_key,{}).get('alias',None)
+            # str(unhexlify(name['key']), encoding="utf-8")
+            alias = self.flex.roster.get(pub_key, {}).get("alias", None)
             if alias is None:
-                alias = '###'
+                alias = "###"
             if pub_key not in self.users:
                 self.users[pub_key] = dict()
             self.users[pub_key].update({"alias": alias})
-            
+
             debug("new button: " + alias)
             button = Button(text=alias)  # + "\n" + str(pub_key))
             button.bind(on_press=self.roster_click_callback)
@@ -93,9 +95,9 @@ class MainWin(App):
         # find the key, given an alias. #TODO: this is O(n^slow) fix it.
         for k in self.users.keys():
             alias = self.users[k].get("alias")
-            #debug(
+            # debug(
             #    f"k: {k} alias:{alias} target: {target} l:{len(target)} {len(alias)} || {alias==target}"
-            #)
+            # )
             if alias == target:
                 return k
 
@@ -110,15 +112,15 @@ class MainWin(App):
             debug(self.users.keys())
             self.flex.request_roster()
             self.load_roster_tab()
-        #debug("key error key:")
-        #debug(key)
-        #debug(" " + str(self.users.keys()))
+        # debug("key error key:")
+        # debug(key)
+        # debug(" " + str(self.users.keys()))
         if self.users[key].get("tab", None) is not None:
             self.master_panel.switch_to(
                 self.users[key]["tab"]
             )  # this, or master_panel.tab_list[0]?
         else:  # build new tab, then swap focus.
-            #debug(self.flex.roster)
+            # debug(self.flex.roster)
             chat_tab = TabbedPanelHeader(text=self.users[key]["alias"])
             chatLayout = BoxLayout(padding=10, orientation="vertical")
             chatOutput = TextInput(text="")
@@ -153,29 +155,38 @@ class MainWin(App):
         key_from = unhexlify(
             d_data["from"]
         )  # str(unhexlify(d_data['from']), encoding="utf-8")
+        alias = None
+        if len(d_data["flags"]) > 0:
+            flags = d_data["flags"]
+            try:
+                for flag, val in (s.split("=") for s in flags):
+                    if flag == "alias":
+                        alias = val
+            except ValueError:
+                debug("ERROR: malformed flags: " + str(flags))
         debug("got_message_callback: " + str(d_data))
         if self.users.get(key_from, None) is None:
-            self.users[key_from] = {"alias":'###'}
-    
+            self.users[key_from] = {"alias": val}
+
         self.newChatTab(key_from)
-        self.users[key_from]["outbox"].text += "\n>>>" + d_data["msg"]
-        #else:
-         #   self.msgqueue.append(d_data)
+        self.users[key_from]["outbox"].text += "\n" + alias + ">>>" + d_data["msg"]
+        # else:
+        #   self.msgqueue.append(d_data)
 
     def got_roster_callback(self):
-        #self.flex.got_roster_callback()
+        # self.flex.got_roster_callback()
         debug("got_roster_callback")
         self.load_roster_tab()
         for msg in self.msgqueue:
             key_from = unhexlify(msg["from"])
             if self.users.get(key_from, None) is not None:
-                debug('calling newChatTab:' + str(key_from))
+                debug("calling newChatTab:" + str(key_from))
                 self.newChatTab(key_from)
                 self.users[key_from]["outbox"].text += "\n>>>" + msg["msg"]
                 self.msgqueue.remove(msg)
             else:
                 debug("174 user not found:" + key_from)
-                self.flex.request_roster() # strangers about.
+                self.flex.request_roster()  # strangers about.
 
 
 MainWin().run()

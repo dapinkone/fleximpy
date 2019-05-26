@@ -6,7 +6,7 @@ from datetime import datetime as dt
 from time import sleep
 from typing import Callable, Iterable, Union, Optional, List
 from threading import Thread
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 
 
 class Datum(Enum):
@@ -24,12 +24,10 @@ class flexclient:
         self,
         ip: str = "127.0.0.1",
         port: int = 4321,
-        username: str = "t" + chr(45+int(str(dt.now())[-1])),
+        username: str = "t" + chr(45 + int(str(dt.now())[-1])),
     ) -> None:
         self.username = username
-        self.pub_key = hexlify(
-            bytes("i need a public key" + str(dt.now()), encoding="utf-8")
-        )
+        self.pub_key = hexlify(bytes("i need a key " + username, encoding="utf-8"))
         self.sock = create_connection((ip, port))
         self.sock.send(msgpack.packb("FLEX"))  # initial protocol header
         cmd = {"cmd": "AUTH", "payload": [self.pub_key, self.username]}
@@ -39,12 +37,10 @@ class flexclient:
         print(challenge_d)
         self.send_auth_response(challenge_d["challenge"])
         self.request_roster()
-        _, _ = self.read_datum()  # user datum?
+        # _, _ = self.read_datum()  # user datum?
         self.roster = dict()
-        #_, self.roster = self.read_datum()  # roster
+        # _, self.roster = self.read_datum()  # roster
         Thread(target=self.mainloop).start()
-
-
 
     def mainloop(self):
         while True:
@@ -55,27 +51,30 @@ class flexclient:
                 continue
             print(d_type, d_data)
             if d_type == Datum.Roster:
-                self.roster.update({ user['key']: {'alias':user['aliases'][0]} for user in d_data})
+                print("roster datum key type: " + str(type(d_data[0]["key"])))
+                self.roster.update(
+                    {user["key"]: {"alias": user["aliases"][0]} for user in d_data}
+                )
                 self.got_roster_callback()
             if d_type == Datum.Message:
                 self.got_message_callback(d_data)
             if d_type == Datum.Status:
                 # 10 for new user online
                 # -10 for user gone offline.
-                if d_data['status'] == 10:
-                    self.request_user(d_data['payload'])
-                    
-            if d_type == Datum.User:
-                if d_data['key'] not in self.roster: #TODO: fix this. doesn't scale.
-                    print("user recieved:" + d_data['aliases'][0])
-                    self.roster[d_data['key']]  = {'alias':d_data['aliases'][0]}
-                    self.got_roster_callback()
+                if d_data["status"] == 10:
+                    self.request_user(d_data["payload"])
 
+            if d_type == Datum.User:
+                if d_data["key"] not in self.roster:  # TODO: fix this. doesn't scale.
+                    print("user recieved:" + d_data["aliases"][0])
+                    self.roster[d_data["key"]] = {"alias": d_data["aliases"][0]}
+                    self.got_roster_callback()
+                else:
+                    print("duplicate user:" + str(d_data))
 
     def request_user(self, key_str):
-        print("requesting user:" + key_str)
-        self.send_datum({"cmd":"GETUSER", "payload":[key_str]}, Datum.Command)
-
+        print("requesting user: " + str(unhexlify(key_str), encoding="utf-8"))
+        self.send_datum({"cmd": "GETUSER", "payload": [key_str]}, Datum.Command)
 
     def got_status_callback(self):
         pass
@@ -98,7 +97,7 @@ class flexclient:
         self,
         to: str,
         category: str = "test",
-        flags: Optional[List[str]] = ["FLAGS?"],
+        flags: Optional[List[str]] = [],
         message: str = "",
     ):
         to = hexlify(to)
@@ -106,7 +105,7 @@ class flexclient:
         msg = {
             "to": to,
             "from": self.pub_key,
-            "flags": flags,
+            "flags": ["alias=" + self.username] + flags,
             "date": int(dt.now().timestamp()),
             "msg": message,
         }
