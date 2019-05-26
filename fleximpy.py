@@ -79,6 +79,7 @@ class MainWin(App):
                 alias = "###"
             if pub_key not in self.users.keys():
                 self.users[pub_key] = {"alias": alias}
+            debug("new button: " + alias)
             button = Button(text=alias)  # + "\n" + str(pub_key))
             button.bind(on_press=self.roster_click_callback)
             self.rosterLayout.add_widget(button)
@@ -152,11 +153,13 @@ class MainWin(App):
             d_data["from"]
         )  # str(unhexlify(d_data['from']), encoding="utf-8")
         debug("got_message_callback: " + str(d_data))
-        if self.users.get(key_from, None) is not None:
-            self.newChatTab(key_from)
-            self.users[key_from]["outbox"].text += "\n>>>" + d_data["msg"]
-        else:
-            self.msgqueue.append(d_data)
+        if self.users.get(key_from, None) is None:
+            self.users[key_from] = {"alias":'###'}
+    
+        self.newChatTab(key_from)
+        self.users[key_from]["outbox"].text += "\n>>>" + d_data["msg"]
+        #else:
+         #   self.msgqueue.append(d_data)
 
     def got_roster_callback(self):
         #self.flex.got_roster_callback()
@@ -169,6 +172,9 @@ class MainWin(App):
                 self.newChatTab(key_from)
                 self.users[key_from]["outbox"].text += "\n>>>" + msg["msg"]
                 self.msgqueue.remove(msg)
+            else:
+                debug("174 user not found:" + key)
+                self.flex.request_roster() # strangers about.
 
 
 MainWin().run()
