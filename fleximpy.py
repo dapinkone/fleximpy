@@ -71,6 +71,7 @@ class MainWin(App):
 
     def build_roster(self):
         self.rosterLayout.clear_widgets()
+        debug("Clearing Widgets")
         for user in self.flex.roster:
             pub_key = user["key"]  # str(unhexlify(name['key']), encoding="utf-8")
             try:
@@ -82,6 +83,7 @@ class MainWin(App):
             debug("new button: " + alias)
             button = Button(text=alias)  # + "\n" + str(pub_key))
             button.bind(on_press=self.roster_click_callback)
+            debug("button made for " + alias)
             self.rosterLayout.add_widget(button)
 
     def roster_click_callback(self, instance):
@@ -92,9 +94,9 @@ class MainWin(App):
         key = None
         for k in self.users.keys():
             alias = self.users[k].get("alias")
-            debug(
-                f"k: {k} alias:{alias} target: {target} l:{len(target)} {len(alias)} || {alias==target}"
-            )
+            #debug(
+            #    f"k: {k} alias:{alias} target: {target} l:{len(target)} {len(alias)} || {alias==target}"
+            #)
             if alias == target:
                 return k
 
@@ -109,15 +111,15 @@ class MainWin(App):
             debug(self.users.keys())
             self.flex.request_roster()
             self.build_roster()
-        debug("key error key:")
-        debug(key)
-        debug(" " + str(self.users.keys()))
+        #debug("key error key:")
+        #debug(key)
+        #debug(" " + str(self.users.keys()))
         if self.users[key].get("tab", None) is not None:
             self.master_panel.switch_to(
                 self.users[key]["tab"]
             )  # this, or master_panel.tab_list[0]?
         else:  # build new tab, then swap focus.
-            debug(self.flex.roster)
+            #debug(self.flex.roster)
             chat_tab = TabbedPanelHeader(text=self.users[key]["alias"])
             chatLayout = BoxLayout(padding=10, orientation="vertical")
             chatOutput = TextInput(text="")
@@ -173,7 +175,7 @@ class MainWin(App):
                 self.users[key_from]["outbox"].text += "\n>>>" + msg["msg"]
                 self.msgqueue.remove(msg)
             else:
-                debug("174 user not found:" + key)
+                debug("174 user not found:" + key_from)
                 self.flex.request_roster() # strangers about.
 
 
