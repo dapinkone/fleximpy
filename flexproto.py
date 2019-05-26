@@ -40,7 +40,7 @@ class flexclient:
         self.send_auth_response(challenge_d["challenge"])
         self.request_roster()
         _, _ = self.read_datum()  # user datum?
-        self.roster = list()
+        self.roster = dict()
         #_, self.roster = self.read_datum()  # roster
         Thread(target=self.mainloop).start()
 
@@ -55,20 +55,20 @@ class flexclient:
                 continue
             print(d_type, d_data)
             if d_type == Datum.Roster:
-                self.roster = d_data
+                self.roster.update({ user['key']: {'alias':user['aliases'][0]} for user in d_data})
                 self.got_roster_callback()
             if d_type == Datum.Message:
                 self.got_message_callback(d_data)
             if d_type == Datum.Status:
                 # 10 for new user online
                 # -10 for user gone offline.
-                if d_data['status'] == 10 or d_data['status'] == -10:
+                if d_data['status'] == 10:
                     self.request_user(d_data['payload'])
                     
             if d_type == Datum.User:
-                if d_data['key'] not in { x['key'] for x in self.roster }: #TODO: fix this. doesn't scale.
+                if d_data['key'] not in self.roster: #TODO: fix this. doesn't scale.
                     print("user recieved:" + d_data['aliases'][0])
-                    self.roster.append(d_data)
+                    self.roster[d_data['key']]  = {'alias':d_data['aliases'][0]}
                     self.got_roster_callback()
 
 

@@ -42,8 +42,8 @@ class MainWin(App):
             self.flex.got_message_callback = self.got_message_callback
             self.flex.got_roster_callback = self.got_roster_callback
 
-            self.master_panel.switch_to(self.roster)
-            self.build_roster()
+            self.master_panel.switch_to(self.rosterTab)
+            self.load_roster_tab()
             
             # self.flex.got_roster_callback = self.build_roster
 
@@ -60,38 +60,37 @@ class MainWin(App):
         # roster tab setup
         tab_header = TabbedPanelHeader(text="Roster")
 
-        self.rosterLayout = BoxLayout(padding=10, orientation="vertical")
+        self.rosterTabLayout = BoxLayout(padding=10, orientation="vertical")
         title_label = Label(text="Hello world", font_size="20sp")
-        self.rosterLayout.add_widget(title_label)
-        tab_header.content = self.rosterLayout
-        self.roster = tab_header
+        self.rosterTabLayout.add_widget(title_label)
+        tab_header.content = self.rosterTabLayout
         self.master_panel.add_widget(tab_header)
-
+        self.rosterTab = tab_header
         return self.master_panel
 
-    def build_roster(self):
-        self.rosterLayout.clear_widgets()
+    def load_roster_tab(self):
+        self.rosterTabLayout.clear_widgets()
         debug("Clearing Widgets")
-        for user in self.flex.roster:
-            pub_key = user["key"]  # str(unhexlify(name['key']), encoding="utf-8")
-            try:
-                alias = user["aliases"][0]
-            except IndexError:
-                alias = "###"
-            if pub_key not in self.users.keys():
-                self.users[pub_key] = {"alias": alias}
+        for pub_key in self.flex.roster.keys():
+              # str(unhexlify(name['key']), encoding="utf-8")
+            alias = self.flex.roster.get(pub_key,{}).get('alias',None)
+            if alias is None:
+                alias = '###'
+            if pub_key not in self.users:
+                self.users[pub_key] = dict()
+            self.users[pub_key].update({"alias": alias})
+            
             debug("new button: " + alias)
             button = Button(text=alias)  # + "\n" + str(pub_key))
             button.bind(on_press=self.roster_click_callback)
             debug("button made for " + alias)
-            self.rosterLayout.add_widget(button)
+            self.rosterTabLayout.add_widget(button)
 
     def roster_click_callback(self, instance):
         self.newChatTab(self.alias_to_key(instance.text))
 
     def alias_to_key(self, target):
         # find the key, given an alias. #TODO: this is O(n^slow) fix it.
-        key = None
         for k in self.users.keys():
             alias = self.users[k].get("alias")
             #debug(
@@ -110,7 +109,7 @@ class MainWin(App):
             debug("newChatTab users.get[key]: ")
             debug(self.users.keys())
             self.flex.request_roster()
-            self.build_roster()
+            self.load_roster_tab()
         #debug("key error key:")
         #debug(key)
         #debug(" " + str(self.users.keys()))
@@ -166,7 +165,7 @@ class MainWin(App):
     def got_roster_callback(self):
         #self.flex.got_roster_callback()
         debug("got_roster_callback")
-        self.build_roster()
+        self.load_roster_tab()
         for msg in self.msgqueue:
             key_from = unhexlify(msg["from"])
             if self.users.get(key_from, None) is not None:
