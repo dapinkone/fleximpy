@@ -24,7 +24,7 @@ class flexclient:
         self,
         ip: str = "127.0.0.1",
         port: int = 4321,
-        username: str = "test" + str(dt.now()),
+        username: str = "t" + chr(45+int(str(dt.now())[-1])),
     ) -> None:
         self.username = username
         self.pub_key = hexlify(
@@ -40,8 +40,16 @@ class flexclient:
         self.send_auth_response(challenge_d["challenge"])
         self.request_roster()
         _, _ = self.read_datum()  # user datum?
-        _, self.roster = self.read_datum()  # roster
+        self.roster = dict()
+        #_, self.roster = self.read_datum()  # roster
         Thread(target=self.mainloop).start()
+        Thread(target=self.roster_poll).start()
+
+    def roster_poll(self):
+        while True:
+            sleep(1)
+            self.request_roster()
+
 
     def mainloop(self):
         while True:
@@ -57,10 +65,15 @@ class flexclient:
             if d_type == Datum.Message:
                 self.got_message_callback(d_data)
 
+    def got_roster_callback(self):
+        print("Roster recieved!")
+        pass
+
     def got_message_callback(self, d_data):
         pass
 
     def request_roster(self):
+        print("requesting roster!")
         self.send_datum({"cmd": "ROSTER"}, Datum.Command)
 
     def send_auth_response(self, challenge: str):
