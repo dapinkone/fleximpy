@@ -32,29 +32,33 @@ class MainWin(App):
         # set up the new connections tab
         connect_tab = TabbedPanelHeader(text="Connect")
         connectLayout = BoxLayout(padding=10, orientation="vertical")
-        connect_label = Button(text="Connect", font_size="20sp")
-        connectLayout.add_widget(connect_label)
-
-        serverTextbox = TextInput(text="127.0.0.1")
-        serverTextbox.multiline = False
 
         def on_enter(instance):  # callback for return key in the hostname box.
-            self.flex = flexclient(ip=instance.text)
-            self.username = self.flex.username
+            self.flex = flexclient(
+                ip=serverTextbox.text, username=self.usernameTextbox.text
+            )
+            self.username = self.usernameTextbox.text
             self.flex.got_message_callback = self.got_message_callback
             self.flex.got_roster_callback = self.got_roster_callback
+            self.flex.got_status_callback = self.got_status_callback
 
             self.master_panel.switch_to(self.rosterTab)
             self.load_roster_tab()
 
             # self.flex.got_roster_callback = self.build_roster
 
+        connect_label = Button(text="Connect", font_size="20sp", on_press=on_enter)
+        connectLayout.add_widget(connect_label)
+
+        serverTextbox = TextInput(text="127.0.0.1")
+        serverTextbox.multiline = False
+
         serverTextbox.bind(on_text_validate=on_enter)
         connectLayout.add_widget(serverTextbox)
 
-        usernameTextbox = TextInput(text="")
-        usernameTextbox.multiline = False
-        connectLayout.add_widget(usernameTextbox)
+        self.usernameTextbox = TextInput(text="", on_text_validate=on_enter)
+        self.usernameTextbox.multiline = False
+        connectLayout.add_widget(self.usernameTextbox)
 
         connect_tab.content = connectLayout
         self.master_panel.add_widget(connect_tab)
@@ -74,7 +78,6 @@ class MainWin(App):
         self.rosterTabLayout.clear_widgets()
         debug("Clearing Widgets")
         for pub_key in self.flex.roster.keys():
-            # str(unhexlify(name['key']), encoding="utf-8")
             alias = self.flex.roster.get(pub_key, {}).get("alias", None)
             if alias is None:
                 alias = "###"
@@ -83,8 +86,11 @@ class MainWin(App):
             self.users[pub_key].update({"alias": alias})
 
             debug("new button: " + alias)
-            button = Button(text=alias)  # + "\n" + str(pub_key))
+            button = Button(text=alias)
+            if self.users.get(pub_key, {}).get("status") == -10:
+                button.color = [0.41, 0.42, 0.74, 1]
             button.bind(on_press=self.roster_click_callback)
+            self.users[pub_key].update({"rosterButton": button})
             debug("button made for " + alias)
             self.rosterTabLayout.add_widget(button)
 
@@ -105,9 +111,7 @@ class MainWin(App):
         # setup a new tab, or switch to required tab.
         debug("newChatTab key:")
         debug(key)
-        if (
-            self.users.get(key, None) is None
-        ):  # FIXME: dies when recieving messages from unknown users.
+        if self.users.get(key, None) is None:
             debug("newChatTab users.get[key]: ")
             debug(self.users.keys())
             self.flex.request_roster()
@@ -156,7 +160,7 @@ class MainWin(App):
             d_data["from"]
         )  # str(unhexlify(d_data['from']), encoding="utf-8")
         alias = None
-        if len(d_data["flags"]) > 0:
+        if d_data["flags"]:
             flags = d_data["flags"]
             try:
                 for flag, val in (s.split("=") for s in flags):
@@ -166,7 +170,7 @@ class MainWin(App):
                 debug("ERROR: malformed flags: " + str(flags))
         debug("got_message_callback: " + str(d_data))
         if self.users.get(key_from, None) is None:
-            self.users[key_from] = {"alias": val}
+            self.users[key_from] = {"alias": alias}
 
         self.newChatTab(key_from)
         self.users[key_from]["outbox"].text += "\n" + alias + ">>>" + d_data["msg"]
@@ -187,6 +191,18 @@ class MainWin(App):
             else:
                 debug("174 user not found:" + key_from)
                 self.flex.request_roster()  # strangers about.
+
+    def got_status_callback(self, d_data):
+        pub_key = d_data["payload"]
+        self.users[pub_key] = self.users.get(pub_key, {})
+        # if d_data['status'] == -10:
+        #     user_button._label.options['color']=[255,255,255,1]
+        # elif d_data['status'] == 10:
+        #     user_button._label.options['color']=[255,0,0,1]
+        self.users[pub_key].update({"status": d_data["status"]})
+        if d_data["status"] == -10:
+            self.users[pub_key].get("RosterButton")
+        self.load_roster_tab()
 
 
 MainWin().run()
