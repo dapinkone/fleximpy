@@ -30,13 +30,12 @@ class flexclient:
         self.pub_key = hexlify(bytes("i need a key " + username, encoding="utf-8"))
         self.sock = create_connection((ip, port))
         self.sock.send(msgpack.packb("FLEX"))  # initial protocol header
+
+        # build/send an auth command(not an auth datum) to inform server of our public key and username.
         cmd = {"cmd": "AUTH", "payload": [self.pub_key, self.username]}
         self.send_datum(cmd, Datum.Command)
 
-        _, challenge_d = self.read_datum()
-        print(challenge_d)
-        self.send_auth_response(challenge_d["challenge"])
-        self.request_roster()
+
         # _, _ = self.read_datum()  # user datum?
         self.roster = dict()
         # _, self.roster = self.read_datum()  # roster
@@ -50,6 +49,9 @@ class flexclient:
                 print(e)
                 continue
             print(d_type, d_data)
+            if d_type == Datum.Auth: # respond to auth challenge/response. request roster update.
+                self.send_auth_response(d_data["challenge"])
+                self.request_roster()
             if d_type == Datum.Roster:
                 print("roster datum key type: " + str(type(d_data[0]["key"])))
                 self.roster.update(
@@ -63,6 +65,7 @@ class flexclient:
                 # -10 for user gone offline.
                 if d_data["status"] == 10:
                     self.request_user(d_data["payload"])
+                self.got_status_callback(d_data)
 
             if d_type == Datum.User:
                 if d_data["key"] not in self.roster:  # TODO: fix this. doesn't scale.
@@ -109,6 +112,7 @@ class flexclient:
             "date": int(dt.now().timestamp()),
             "msg": message,
         }
+        print(msg)
         d_type: Datum = Datum.Message  # type 3 = msg
         self.send_datum(msg, d_type)
 
