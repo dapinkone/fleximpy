@@ -168,6 +168,8 @@ class MainWin(App):
                         alias = val
             except ValueError:
                 debug("ERROR: malformed flags: " + str(flags))
+        d_data['to'] = unhexlify(d_data['to'])
+        d_data['from']=unhexlify(d_data['from'])
         debug("got_message_callback: " + str(d_data))
         if self.users.get(key_from, None) is None:
             self.users[key_from] = {"alias": alias}

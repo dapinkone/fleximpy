@@ -112,7 +112,6 @@ class flexclient:
             "date": int(dt.now().timestamp()),
             "msg": message,
         }
-        print(msg)
         d_type: Datum = Datum.Message  # type 3 = msg
         self.send_datum(msg, d_type)
 
