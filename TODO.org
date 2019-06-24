@@ -1,0 +1,23 @@
+* GUI redesign
+** friends list
+*** remove friend/mute/unmute buttons
+*** user status(online/offline) & muted indicators
+*** timestamps
+*** improve chat layout for readability
+*** colored/highlighed text for aliases in chat a la IRC
+** roster search
+*** ignore/addfriend buttons & status indicators
+*** search by alias
+**** optional john#abcdef mode searches for alias 'john' whose key ends with 'abcdef' with user-decided precision(up to max keylen)
+** themeing options
+* Database work:
+** Persistent friends list & block list
+*** Add/Remove/block friend prompt box
+** (searchable?) Chat history
+** Clickable links in chat
+* Complex "back burner" dreams
+** notification/taskbar highlight & noise on msg, system agnostic if possible, but windows required
+** transmission/receipt/display of images
+** "code" mode with syntax highlighting
+** flood protection
+** per-user chat window(dragable/combinable tabs?)
