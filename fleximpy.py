@@ -46,22 +46,28 @@ class MainWin(App):
             self.load_roster_tab()
 
             # self.flex.got_roster_callback = self.build_roster
+        serverSubLayout = BoxLayout(orientation="horizontal")
+        serverSubLayout.add_widget(Label(text="Hostname:"))
+        serverTextbox = TextInput(text="127.0.0.1")
+        serverTextbox.multiline = False
+        serverTextbox.bind(on_text_validate=on_enter)
+        serverSubLayout.add_widget(serverTextbox)
+        connectLayout.add_widget(serverSubLayout)
+
+        usernameSubLayout = BoxLayout(orientation="horizontal")
+        usernameSubLayout.add_widget(Label(text="Username:"))
+        self.usernameTextbox = TextInput(text="", on_text_validate=on_enter)
+        self.usernameTextbox.multiline = False
+        usernameSubLayout.add_widget(self.usernameTextbox)
+        connectLayout.add_widget(usernameSubLayout)
 
         connect_label = Button(text="Connect", font_size="20sp", on_press=on_enter)
         connectLayout.add_widget(connect_label)
 
-        serverTextbox = TextInput(text="127.0.0.1")
-        serverTextbox.multiline = False
-
-        serverTextbox.bind(on_text_validate=on_enter)
-        connectLayout.add_widget(serverTextbox)
-
-        self.usernameTextbox = TextInput(text="", on_text_validate=on_enter)
-        self.usernameTextbox.multiline = False
-        connectLayout.add_widget(self.usernameTextbox)
-
         connect_tab.content = connectLayout
         self.master_panel.add_widget(connect_tab)
+
+
 
         # roster tab setup
         tab_header = TabbedPanelHeader(text="Roster")
