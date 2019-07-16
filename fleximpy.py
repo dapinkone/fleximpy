@@ -1,43 +1,48 @@
-from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem, TabbedPanelHeader
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
+# from kivy.app import App
+# from kivy.uix.button import Button
+# from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem, TabbedPanelHeader
+# from kivy.uix.boxlayout import QVBoxLayout
+# from kivy.uix.label import Label
 from flexproto import flexclient
-from kivy.uix.textinput import TextInput
+#from kivy.uix.textinput import TextInput
 from threading import Thread
 from binascii import hexlify, unhexlify
-from kivy.clock import Clock
-import kivy
+#from kivy.clock import Clock
+#import kivy
 from time import sleep
 import logging
-from kivy.logger import Logger
+from PySide2.QtWidgets import (QApplication, QLabel, QPushButton,
+                               QVBoxLayout, QHBoxLayout, QWidget,
+                               QLineEdit, QTabWidget)
+#from kivy.logger import Logger
+logger = logging.getLogger('')
+#logger = kivy.logger.logging
+logger.level = logging.DEBUG
+#from kivy.config import Config
 
-# logger = kivy.logger.logging
-# logger.level = logging.DEBUG
-from kivy.config import Config
-
-Config.set("kivy", "log_level", "debug")
-Config.set("kivy", "log_enable", 0)
-Config.write()
-debug = Logger.debug
+#Config.set("kivy", "log_level", "debug")
+#Config.set("kivy", "log_enable", 0)
+#Config.write()
+#debug = Logger.debug
 
 
-class MainWin(App):
+#class MainWin(App):
+class MainWin(QWidget):
     def build(self):
-        self.master_panel = TabbedPanel(do_default_tab=False)
+#        self.master_panel = TabbedPanel(do_default_tab=False)
+        self.master_panel = QTabWidget()
         self.users = dict()
         # users data structure:
         # users[key] = {"tab":tab, "outbox":outbox, "inbox", inbox}
         # set up the new connections tab
-        connect_tab = TabbedPanelHeader(text="Connect")
-        connectLayout = BoxLayout(padding=10, orientation="vertical")
+        connect_tab = QWidget() #TabbedPanelHeader(text="Connect")
+        connectLayout = QVBoxLayout(padding=10, orientation="vertical")
 
         def on_enter(instance):  # callback for return key in the hostname box.
             self.flex = flexclient(
-                ip=serverTextbox.text, username=self.usernameTextbox.text
+                ip=serverTextbox.text(), username=self.usernameTextbox.text()
             )
-            self.username = self.usernameTextbox.text
+            self.username = self.usernameTextbox.text()
             self.flex.got_message_callback = self.got_message_callback
             self.flex.got_roster_callback = self.got_roster_callback
             self.flex.got_status_callback = self.got_status_callback
@@ -46,39 +51,44 @@ class MainWin(App):
             self.load_roster_tab()
 
             # self.flex.got_roster_callback = self.build_roster
-        serverSubLayout = BoxLayout(orientation="horizontal")
-        serverSubLayout.add_widget(Label(text="Hostname:"))
-        serverTextbox = TextInput(text="127.0.0.1")
-        serverTextbox.multiline = False
-        serverTextbox.bind(on_text_validate=on_enter)
-        serverSubLayout.add_widget(serverTextbox)
-        connectLayout.add_widget(serverSubLayout)
+        serverSubLayout = QHBoxLayout()
+        hostnameLabel = QLabel()
+        hostnameLabel.setText("Hostname:")
+        serverSubLayout.addWidget(hostnameLabel)
 
-        usernameSubLayout = BoxLayout(orientation="horizontal")
-        usernameSubLayout.add_widget(Label(text="Username:"))
-        self.usernameTextbox = TextInput(text="", on_text_validate=on_enter)
-        self.usernameTextbox.multiline = False
-        usernameSubLayout.add_widget(self.usernameTextbox)
-        connectLayout.add_widget(usernameSubLayout)
+        serverTextbox = QLineEdit(self) #TextInput(text="127.0.0.1")
+        serverTextbox.setText("127.0.0.1")
+        #serverTextbox.multiline = False
+        #serverTextbox.bind(on_text_validate=on_enter)
+        serverSubLayout.addWidget(serverTextbox)
+        connectLayout.addWidget(serverSubLayout)
 
-        connect_label = Button(text="Connect", font_size="20sp", on_press=on_enter)
-        connectLayout.add_widget(connect_label)
+        usernameSubLayout = QVBoxLayout(orientation="horizontal")
+        usernameSubLayout.addWidget(QLabel(text="Username:"))
+        self.usernameTextbox = QLineEdit(self)#text="", on_text_validate=on_enter)
+        #self.usernameTextbox.multiline = False
+        usernameSubLayout.addWidget(self.usernameTextbox)
+        connectLayout.addWidget(usernameSubLayout)
 
-        connect_tab.content = connectLayout
-        self.master_panel.add_widget(connect_tab)
+        connect_label = QButton(text="Connect", font_size="20sp", on_press=on_enter)
+        connectLayout.addWidget(connect_label)
+
+        #connect_tab.content = connectLayout
+        self.master_panel.addWidget(connect_tab)
 
 
 
         # roster tab setup
         tab_header = TabbedPanelHeader(text="Roster")
 
-        self.rosterTabLayout = BoxLayout(padding=10, orientation="vertical")
+        self.rosterTabLayout = QVBoxLayout(padding=10, orientation="vertical")
         title_label = Label(text="Hello world", font_size="20sp")
-        self.rosterTabLayout.add_widget(title_label)
+        self.rosterTabLayout.addWidget(title_label)
         tab_header.content = self.rosterTabLayout
-        self.master_panel.add_widget(tab_header)
+        self.master_panel.addWidget(tab_header)
         self.rosterTab = tab_header
-        return self.master_panel
+        #return self.master_panel
+        self.show()
 
     def load_roster_tab(self):
         self.rosterTabLayout.clear_widgets()
@@ -98,7 +108,7 @@ class MainWin(App):
             button.bind(on_press=self.roster_click_callback)
             self.users[pub_key].update({"rosterButton": button})
             debug("button made for " + alias)
-            self.rosterTabLayout.add_widget(button)
+            self.rosterTabLayout.addWidget(button)
 
     def roster_click_callback(self, instance):
         self.newChatTab(self.alias_to_key(instance.text))
@@ -132,9 +142,9 @@ class MainWin(App):
         else:  # build new tab, then swap focus.
             # debug(self.flex.roster)
             chat_tab = TabbedPanelHeader(text=self.users[key]["alias"])
-            chatLayout = BoxLayout(padding=10, orientation="vertical")
+            chatLayout = QVBoxLayout(padding=10, orientation="vertical")
             chatOutput = TextInput(text="")
-            chatLayout.add_widget(chatOutput)
+            chatLayout.addWidget(chatOutput)
             chatInput = TextInput(text="", size_hint=(1, 0.1))
             chatInput.multiline = False
 
@@ -142,20 +152,20 @@ class MainWin(App):
                 chatInput.focus = True
 
             def on_enter(instance):  # callback for return key in the hostname box.
-                self.flex.send_message(message=chatInput.text, to=key)
-                self.users[key]["outbox"].text += "\n<<<" + chatInput.text
-                self.users[key]["inbox"].text = ""
+                self.flex.send_message(message=chatInput.text(), to=key)
+                self.users[key]["outbox"].setText += "\n<<<" + chatInput.text()
+                self.users[key]["inbox"].setText = ""
 
-                Clock.schedule_once(set_chatInput_focus, 0.1)
+#                Clock.schedule_once(set_chatInput_focus, 0.1)
 
             chatInput.bind(on_text_validate=on_enter)
-            chatLayout.add_widget(chatInput)
+            chatLayout.addWidget(chatInput)
 
             chat_tab.content = chatLayout
             self.users[key]["tab"] = chat_tab
             self.users[key]["inbox"] = chatInput
             self.users[key]["outbox"] = chatOutput
-            self.master_panel.add_widget(chat_tab)
+            self.master_panel.addWidget(chat_tab)
             self.master_panel.switch_to(self.users[key]["tab"])
             Clock.schedule_once(set_chatInput_focus, 0.1)
 
@@ -181,7 +191,10 @@ class MainWin(App):
             self.users[key_from] = {"alias": alias}
 
         self.newChatTab(key_from)
-        self.users[key_from]["outbox"].text += "\n" + alias + ">>>" + d_data["msg"]
+        self.users[key_from]["outbox"].setText(
+            self.users[key_from]["outbox"].text()
+            + "\n" + alias + ">>>" + d_data["msg"]
+            )
         # else:
         #   self.msgqueue.append(d_data)
 
@@ -194,7 +207,9 @@ class MainWin(App):
             if self.users.get(key_from, None) is not None:
                 debug("calling newChatTab:" + str(key_from))
                 self.newChatTab(key_from)
-                self.users[key_from]["outbox"].text += "\n>>>" + msg["msg"]
+                self.users[key_from]["outbox"].setText(
+                    self.users[key_from]["outbox"].text() + "\n>>>" + msg["msg"]
+                )
                 self.msgqueue.remove(msg)
             else:
                 debug("174 user not found:" + key_from)
@@ -211,6 +226,7 @@ class MainWin(App):
         if d_data["status"] == -10:
             self.users[pub_key].get("RosterButton")
         self.load_roster_tab()
+
 
 
 MainWin().run()

@@ -8,12 +8,12 @@ cython = "*"
 kivy = "*"
 pygame = "*"
 pillow = "*"
-black = "==18.9b0"
 pynacl = "*"
 msgpack = "*"
+pyside2 = "*"
+
 
 [dev-packages]
-black = "*"
 
 [requires]
 python_version = "3.7"
